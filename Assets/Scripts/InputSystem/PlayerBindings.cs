@@ -53,6 +53,15 @@ public partial class @PlayerBindings: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Scroll"",
+                    ""type"": ""Value"",
+                    ""id"": ""836b9267-9786-4df6-92f3-0c60aba1959a"",
+                    ""expectedControlType"": ""Axis"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -209,6 +218,17 @@ public partial class @PlayerBindings: IInputActionCollection2, IDisposable
                     ""action"": ""Parkour"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""011c52eb-35fe-45e6-a0b8-c6541595267b"",
+                    ""path"": ""<Mouse>/scroll/y"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Scroll"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -220,6 +240,7 @@ public partial class @PlayerBindings: IInputActionCollection2, IDisposable
         m_Player_Movement = m_Player.FindAction("Movement", throwIfNotFound: true);
         m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
         m_Player_Parkour = m_Player.FindAction("Parkour", throwIfNotFound: true);
+        m_Player_Scroll = m_Player.FindAction("Scroll", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -284,6 +305,7 @@ public partial class @PlayerBindings: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Movement;
     private readonly InputAction m_Player_Jump;
     private readonly InputAction m_Player_Parkour;
+    private readonly InputAction m_Player_Scroll;
     public struct PlayerActions
     {
         private @PlayerBindings m_Wrapper;
@@ -291,6 +313,7 @@ public partial class @PlayerBindings: IInputActionCollection2, IDisposable
         public InputAction @Movement => m_Wrapper.m_Player_Movement;
         public InputAction @Jump => m_Wrapper.m_Player_Jump;
         public InputAction @Parkour => m_Wrapper.m_Player_Parkour;
+        public InputAction @Scroll => m_Wrapper.m_Player_Scroll;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -309,6 +332,9 @@ public partial class @PlayerBindings: IInputActionCollection2, IDisposable
             @Parkour.started += instance.OnParkour;
             @Parkour.performed += instance.OnParkour;
             @Parkour.canceled += instance.OnParkour;
+            @Scroll.started += instance.OnScroll;
+            @Scroll.performed += instance.OnScroll;
+            @Scroll.canceled += instance.OnScroll;
         }
 
         private void UnregisterCallbacks(IPlayerActions instance)
@@ -322,6 +348,9 @@ public partial class @PlayerBindings: IInputActionCollection2, IDisposable
             @Parkour.started -= instance.OnParkour;
             @Parkour.performed -= instance.OnParkour;
             @Parkour.canceled -= instance.OnParkour;
+            @Scroll.started -= instance.OnScroll;
+            @Scroll.performed -= instance.OnScroll;
+            @Scroll.canceled -= instance.OnScroll;
         }
 
         public void RemoveCallbacks(IPlayerActions instance)
@@ -344,5 +373,6 @@ public partial class @PlayerBindings: IInputActionCollection2, IDisposable
         void OnMovement(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);
         void OnParkour(InputAction.CallbackContext context);
+        void OnScroll(InputAction.CallbackContext context);
     }
 }

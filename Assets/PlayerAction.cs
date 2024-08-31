@@ -12,7 +12,9 @@ public class PlayerAction : MonoBehaviour
     public event PlayerActionPerformed OnParkour;
 
     private Vector2 movementVector;
+    private float scrollAmount;
     public Vector2 Movement => movementVector;
+    public float ScrollAmount => scrollAmount;
 
     private void Awake()
     {
@@ -21,11 +23,14 @@ public class PlayerAction : MonoBehaviour
         bindings.Player.Enable();
         bindings.Player.Jump.performed += Jump_performed;
         bindings.Player.Parkour.performed += Parkour_performed;
+        bindings.Player.Scroll.performed += Scroll_performed;
+
     }
     public void OnDisable()
     {
         bindings.Player.Jump.performed -= Jump_performed;
         bindings.Player.Parkour.performed -= Parkour_performed;
+        bindings.Player.Scroll.performed -= Scroll_performed;
     }
     public void Jump_performed(InputAction.CallbackContext context)
     {
@@ -35,6 +40,10 @@ public class PlayerAction : MonoBehaviour
     public void Parkour_performed(InputAction.CallbackContext context)
     {
         if (context.performed) { OnParkour?.Invoke(); }
+    }
+    private void Scroll_performed(InputAction.CallbackContext context)
+    {
+        scrollAmount += Mathf.Clamp(context.ReadValue<float>(), -1, 1);
     }
     public void FixedUpdate()
     {

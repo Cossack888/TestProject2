@@ -29,7 +29,10 @@ public class Jumping : MovementType
 
     void Somersault()
     {
-        if (!Falling()) { playerController.SetMovement(playerController.Somersault); }
+        if (playerController.CurrentMovement == this && !Falling())
+        {
+            playerController.SetMovement(playerController.Somersault);
+        }
     }
 
     public void HandleRotation()

@@ -1,4 +1,5 @@
 using System;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class RegularMovement : MovementType
@@ -6,6 +7,7 @@ public class RegularMovement : MovementType
     public RegularMovement(Rigidbody rb, Transform transform, PlayerController controller, PlayerAction action) : base(rb, transform, controller, action)
     {
         action.OnJump += Jump;
+        action.OnParkour += WallRun;
     }
     private Vector3 movement;
     public override void EnterMovement()
@@ -33,6 +35,13 @@ public class RegularMovement : MovementType
             playerController.SetMovement(playerController.Jumping);
         }
     }
+    public void WallRun()
+    {
+        if (StuckToLeftSide() || StuckToRightSide())
+        {
+            playerController.SetMovement(playerController.WallRun);
+        }
+    }
     public void HandleRotation()
     {
         if (movement != Vector3.zero)
@@ -45,5 +54,6 @@ public class RegularMovement : MovementType
     ~RegularMovement()
     {
         playerAction.OnJump -= Jump;
+        playerAction.OnParkour -= WallRun;
     }
 }

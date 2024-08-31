@@ -26,6 +26,14 @@ public abstract class MovementType : IMovement
     {
         return Physics.Raycast(playerController.GroundCheck.position, Vector3.down, out RaycastHit hit, playerController.GroundDistance, playerController.GroundMask);
     }
+    protected bool StuckToLeftSide()
+    {
+        return Physics.Raycast(playerTransform.position, Vector3.forward, out RaycastHit hit, playerController.WallDistance, playerController.WallMask);
+    }
+    protected bool StuckToRightSide()
+    {
+        return Physics.Raycast(playerTransform.position, -Vector3.forward, out RaycastHit hit, playerController.WallDistance, playerController.WallMask);
+    }
     protected bool Falling()
     {
         return playerRigidbody.velocity.y < 0;
