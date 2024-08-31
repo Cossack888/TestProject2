@@ -9,6 +9,7 @@ public class PlayerAction : MonoBehaviour
     private PlayerBindings bindings;
     public delegate void PlayerActionPerformed();
     public event PlayerActionPerformed OnJump;
+    public event PlayerActionPerformed OnParkour;
 
     private Vector2 movementVector;
     public Vector2 Movement => movementVector;
@@ -19,16 +20,21 @@ public class PlayerAction : MonoBehaviour
         bindings = new PlayerBindings();
         bindings.Player.Enable();
         bindings.Player.Jump.performed += Jump_performed;
+        bindings.Player.Parkour.performed += Parkour_performed;
     }
     public void OnDisable()
     {
         bindings.Player.Jump.performed -= Jump_performed;
+        bindings.Player.Parkour.performed -= Parkour_performed;
     }
-
     public void Jump_performed(InputAction.CallbackContext context)
     {
         if (context.performed) { OnJump?.Invoke(); }
 
+    }
+    public void Parkour_performed(InputAction.CallbackContext context)
+    {
+        if (context.performed) { OnParkour?.Invoke(); }
     }
     public void FixedUpdate()
     {

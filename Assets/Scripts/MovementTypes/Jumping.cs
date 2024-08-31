@@ -7,8 +7,8 @@ public class Jumping : MovementType
 {
     public Jumping(Rigidbody rb, Transform transform, PlayerController controller, PlayerAction action) : base(rb, transform, controller, action)
     {
+        action.OnParkour += Somersault;
     }
-    private bool falling;
     private Vector3 previousVelocity;
     private Vector3 movement;
 
@@ -20,12 +20,16 @@ public class Jumping : MovementType
     }
     public override void UpdateMovement()
     {
-        falling = playerRigidbody.velocity.y < 0;
         movement = new Vector3(playerAction.Movement.x, 0f, playerAction.Movement.y);
-        if (IsGrounded() && falling)
+        if (IsGrounded() && Falling())
         {
             playerController.SetMovement(playerController.RegularMovement);
         }
+    }
+
+    void Somersault()
+    {
+        if (!Falling()) { playerController.SetMovement(playerController.Somersault); }
     }
 
     public void HandleRotation()
@@ -41,5 +45,9 @@ public class Jumping : MovementType
     {
         playerRigidbody.velocity = new Vector3(playerController.WalkSpeed / 2 * movement.x, playerRigidbody.velocity.y, playerController.WalkSpeed / 2 * movement.z);
         HandleRotation();
+    }
+    ~Jumping()
+    {
+        playerAction.OnParkour -= Somersault;
     }
 }
