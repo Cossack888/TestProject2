@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Somersault : MovementType
@@ -20,6 +18,7 @@ public class Somersault : MovementType
         duration = playerController.SomersaultDuration;
         startRotation = playerTransform.rotation;
         endRotation = startRotation * Quaternion.Euler(rotationAxis * 360f);
+        momentum.ModifyMomentum(1);
     }
     public override void UpdateMovement()
     {
@@ -39,9 +38,5 @@ public class Somersault : MovementType
         {
             playerController.SetMovement(playerController.RegularMovement);
         }
-    }
-    public override void ExitMovement()
-    {
-
     }
 }

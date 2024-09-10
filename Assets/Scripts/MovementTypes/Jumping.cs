@@ -1,29 +1,114 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditorInternal;
 using UnityEngine;
 
 public class Jumping : MovementType
 {
     public Jumping(Rigidbody rb, Transform transform, PlayerController controller, PlayerAction action) : base(rb, transform, controller, action)
     {
-        action.OnParkour += Somersault;
+        action.OnParkourGlobal += Somersault;
+        action.OnJumpGlobal += WallRunOrDoubleJump;
+        action.OnDashGlobal += Dash;
+        controller.OnLand += Landed;
     }
-    private Vector3 previousVelocity;
-    private Vector3 movement;
-
+    private float initialYPosition;
+    private float targetYPosition;
+    private float currentYVelocity;
+    private bool isAscending;
+    private bool isAtPeak;
+    private bool doubleJumped;
     public override void EnterMovement()
     {
-        previousVelocity = new Vector3(playerRigidbody.velocity.x, 0, playerRigidbody.velocity.z);
-        playerRigidbody.velocity = previousVelocity / 2;
-        playerRigidbody.AddForce(Vector3.up * playerController.JumpForce, ForceMode.Impulse);
+        initialYPosition = playerRigidbody.position.y;
+        targetYPosition = initialYPosition + playerController.JumpHeight;
+        currentYVelocity = 0f;
+        isAscending = true;
+        isAtPeak = false;
+        momentum.ModifyMomentum(-0.1f);
     }
     public override void UpdateMovement()
     {
-        movement = new Vector3(playerAction.Movement.x, 0f, playerAction.Movement.y);
         if (IsGrounded() && Falling())
         {
+            doubleJumped = false;
+            Landed();
+        }
+
+        movement = new Vector3(playerAction.Movement.x, 0f, playerAction.Movement.y);
+
+        if (!IsGrounded())
+        {
+            movement *= playerController.AirControlFactor;
+        }
+
+    }
+
+    public void WallRunOrDoubleJump()
+    {
+        if (!IsGrounded())
+        {
+            if (StuckToLeftSide() || StuckToRightSide())
+            {
+                WallRun();
+            }
+            else
+            {
+                DoubleJump();
+            }
+        }
+    }
+    public void Landed()
+    {
+        if (IsGrounded())
+        {
             playerController.SetMovement(playerController.RegularMovement);
+        }
+    }
+    public void WallRun()
+    {
+        playerController.SetMovement(playerController.WallRun);
+    }
+    public void Dash()
+    {
+        if (playerController.CurrentMovement == this)
+        {
+            playerController.SetMovement(playerController.Dash);
+        }
+    }
+
+    public override void FixedUpdateMovement()
+    {
+        Vector3 targetVelocity = playerController.RunSpeed * new Vector3(movement.x, 0, movement.z);
+        targetVelocity.y = playerRigidbody.velocity.y;
+        if (isAscending)
+        {
+            currentYVelocity += playerController.JumpForce * Time.deltaTime;
+            if (playerRigidbody.position.y >= targetYPosition)
+            {
+                isAscending = false;
+                isAtPeak = true;
+            }
+        }
+        else if (isAtPeak)
+        {
+            currentYVelocity -= playerController.JumpForce * Time.deltaTime;
+            if (currentYVelocity <= 0)
+            {
+                isAtPeak = false;
+            }
+        }
+        else
+        {
+            currentYVelocity -= playerController.JumpForce * Time.deltaTime * 2;
+        }
+        targetVelocity.y = currentYVelocity;
+        playerRigidbody.velocity = targetVelocity;
+        HandleRotation();
+    }
+    void DoubleJump()
+    {
+        if (!doubleJumped)
+        {
+            doubleJumped = true;
+            playerController.SetMovement(this);
         }
     }
 
@@ -35,22 +120,11 @@ public class Jumping : MovementType
         }
     }
 
-    public void HandleRotation()
-    {
-        if (movement != Vector3.zero)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(movement, Vector3.forward);
-            targetRotation = Quaternion.Euler(0f, targetRotation.eulerAngles.y, 0);
-            playerTransform.rotation = targetRotation * Quaternion.Euler(0f, 90f, 90f);
-        }
-    }
-    public override void FixedUpdateMovement()
-    {
-        playerRigidbody.velocity = new Vector3(playerController.WalkSpeed / 2 * movement.x, playerRigidbody.velocity.y, playerController.WalkSpeed / 2 * movement.z);
-        HandleRotation();
-    }
     ~Jumping()
     {
-        playerAction.OnParkour -= Somersault;
+        playerAction.OnParkourGlobal -= Somersault;
+        playerAction.OnJumpGlobal -= WallRunOrDoubleJump;
+        playerAction.OnDashGlobal -= Dash;
+        playerController.OnLand -= Landed;
     }
 }

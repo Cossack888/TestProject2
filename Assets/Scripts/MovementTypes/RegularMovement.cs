@@ -1,31 +1,29 @@
-using System;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class RegularMovement : MovementType
 {
     public RegularMovement(Rigidbody rb, Transform transform, PlayerController controller, PlayerAction action) : base(rb, transform, controller, action)
     {
-        action.OnJump += Jump;
-        action.OnParkour += WallRun;
-    }
-    private Vector3 movement;
-    public override void EnterMovement()
-    {
-        RaycastHit hit;
-        if (Physics.Raycast(playerController.GroundCheck.position, Vector3.down, out hit, Mathf.Infinity, playerController.GroundMask))
-        {
-            playerTransform.position = new Vector3(playerTransform.position.x, hit.point.y + playerController.GroundDistance + Vector3.Distance(playerTransform.position, playerController.GroundCheck.position) / 2, playerTransform.position.z);
-        }
+        action.OnJumpGlobal += Jump;
+        action.OnDashGlobal += Dash;
     }
     public override void UpdateMovement()
     {
         movement = new Vector3(playerAction.Movement.x, 0f, playerAction.Movement.y);
-
+        float slowMultiplier = playerAction.IsSprinting ? 5 : 10;
+        momentum.ModifyMomentum(-Time.deltaTime / slowMultiplier);
+        if (playerAction.IsCrouching && momentum.CurrentMomentum > 0)
+        {
+            playerController.SetMovement(playerController.Crouching);
+        }
     }
     public override void FixedUpdateMovement()
     {
-        playerRigidbody.velocity = playerController.WalkSpeed * movement;
+        Vector3 targetVelocity = (playerAction.IsSprinting ? playerController.RunSpeed + momentum.CurrentMomentum : playerController.WalkSpeed + momentum.CurrentMomentum) * new Vector3(movement.x, 0, movement.z);
+        targetVelocity.y = playerRigidbody.velocity.y;
+
+        playerRigidbody.velocity = targetVelocity;
+
         HandleRotation();
     }
     public void Jump()
@@ -35,25 +33,17 @@ public class RegularMovement : MovementType
             playerController.SetMovement(playerController.Jumping);
         }
     }
-    public void WallRun()
+    public void Dash()
     {
-        if (StuckToLeftSide() || StuckToRightSide())
+        if (playerController.CurrentMovement == this)
         {
-            playerController.SetMovement(playerController.WallRun);
+            playerController.SetMovement(playerController.Dash);
         }
     }
-    public void HandleRotation()
-    {
-        if (movement != Vector3.zero)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(movement, Vector3.forward);
-            targetRotation = Quaternion.Euler(0f, targetRotation.eulerAngles.y, 0);
-            playerTransform.rotation = Quaternion.Slerp(playerTransform.rotation, targetRotation * Quaternion.Euler(0f, 90f, 90f), playerController.RotationSpeed * Time.deltaTime);
-        }
-    }
+
     ~RegularMovement()
     {
-        playerAction.OnJump -= Jump;
-        playerAction.OnParkour -= WallRun;
+        playerAction.OnJumpGlobal -= Jump;
+        playerAction.OnDashGlobal -= Dash;
     }
 }

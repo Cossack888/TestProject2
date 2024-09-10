@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class MovementType : IMovement
@@ -8,13 +6,15 @@ public abstract class MovementType : IMovement
     protected Transform playerTransform;
     protected PlayerController playerController;
     protected PlayerAction playerAction;
-
+    protected Momentum momentum;
+    protected Vector3 movement;
     public MovementType(Rigidbody rb, Transform transform, PlayerController controller, PlayerAction action)
     {
         playerRigidbody = rb;
         playerTransform = transform;
         playerController = controller;
         playerAction = action;
+        momentum = GameObject.FindObjectOfType<Momentum>();
     }
 
     public virtual void EnterMovement() { }
@@ -24,20 +24,37 @@ public abstract class MovementType : IMovement
 
     protected bool IsGrounded()
     {
-        return Physics.Raycast(playerController.GroundCheck.position, Vector3.down, out RaycastHit hit, playerController.GroundDistance, playerController.GroundMask);
+        float sphereRadius = 0.2f;
+        bool feetCheckGrounded = Physics.OverlapSphere(playerController.FeetCheck.position, sphereRadius, playerController.GroundMask).Length > 0;
+        bool groundCheckGrounded = Physics.OverlapSphere(playerController.GroundCheck.position, sphereRadius, playerController.GroundMask).Length > 0;
+        bool headCheckGrounded = Physics.OverlapSphere(playerController.HeadCheck.position, sphereRadius, playerController.GroundMask).Length > 0;
+        return feetCheckGrounded || groundCheckGrounded || headCheckGrounded;
     }
+
     protected bool StuckToLeftSide()
     {
-        return Physics.Raycast(playerTransform.position, Vector3.forward, out RaycastHit hit, playerController.WallDistance, playerController.WallMask);
+        bool isStuckBack = Physics.Raycast(playerTransform.position, -playerTransform.forward, out RaycastHit hitForward, playerController.WallDistance, playerController.WallMask);
+        bool isStuckLeft = Physics.Raycast(playerTransform.position, -playerTransform.right, out RaycastHit hitRight, playerController.WallDistance, playerController.WallMask);
+        return isStuckBack || isStuckLeft;
     }
     protected bool StuckToRightSide()
     {
-        return Physics.Raycast(playerTransform.position, -Vector3.forward, out RaycastHit hit, playerController.WallDistance, playerController.WallMask);
+        bool isStuckForward = Physics.Raycast(playerTransform.position, playerTransform.forward, out RaycastHit hitForward, playerController.WallDistance, playerController.WallMask);
+        bool isStuckRight = Physics.Raycast(playerTransform.position, playerTransform.right, out RaycastHit hitRight, playerController.WallDistance, playerController.WallMask);
+        return isStuckForward || isStuckRight;
     }
     protected bool Falling()
     {
         return playerRigidbody.velocity.y < 0;
     }
 
-
+    protected void HandleRotation()
+    {
+        if (movement != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(movement, Vector3.forward);
+            targetRotation = Quaternion.Euler(0f, targetRotation.eulerAngles.y, 0);
+            playerTransform.rotation = Quaternion.Slerp(playerTransform.rotation, targetRotation * Quaternion.Euler(0f, 90f, 90f), playerController.RotationSpeed * Time.deltaTime);
+        }
+    }
 }
